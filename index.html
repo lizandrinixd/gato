@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gato Imbatible</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
+<style>
+    body {
+        font-family: 'Press Start 2P', system-ui;
+        text-align: center;
+        background: #111;
+        color: #fff;
+        margin: 0;
+        padding: 10px;
+        max-width: 420px; /* Dimensiones de celular */
+        margin: 0 auto;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        border: 12px solid #222;
+        border-radius: 30px;
+        overflow: hidden;
+    }
+    h1 {
+        font-size: 1.4em;
+        margin: 10px 0 5px;
+        text-shadow: 4px 4px 0 #000;
+    }
+    p {
+        font-size: 0.8em;
+        margin: 5px 0 15px;
+    }
+    #score {
+        font-size: 0.85em;
+        background: #222;
+        padding: 12px;
+        margin: 10px auto;
+        width: 90%;
+        border-radius: 8px;
+        border: 4px solid #333;
+        display: flex;
+        justify-content: space-around;
+        box-shadow: inset 0 0 10px #000;
+    }
+    #board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        justify-content: center;
+        margin: 15px auto;
+        max-width: 300px;
+    }
+    .cell {
+        width: 90px;
+        height: 90px;
+        background: #222;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3em;
+        cursor: pointer;
+        border: 6px solid #333;
+        border-radius: 8px;
+        box-shadow: 4px 4px 0 #000;
+        transition: all 0.1s;
+    }
+    .cell:active {
+        transform: scale(0.95);
+    }
+    button {
+        font-family: 'Press Start 2P', system-ui;
+        margin-top: 15px;
+        padding: 15px 30px;
+        font-size: 1em;
+        background: #222;
+        color: #fff;
+        border: 6px solid #333;
+        border-radius: 8px;
+        box-shadow: 4px 4px 0 #000;
+        cursor: pointer;
+    }
+    button:active {
+        transform: translateY(4px);
+        box-shadow: 2px 2px 0 #000;
+    }
+</style>
+</head>
+<body>
+    <h1>🐱 GATO IMBATIBLE</h1>
+    <p>Tú: X | Máquina: O</p>
+    
+    <div id="score">
+        TÚ: <span id="playerScore">0</span> 
+        MÁQUINA: <span id="aiScore">0</span> 
+        EMPATES: <span id="drawScore">0</span>
+    </div>
+
+    <div id="board"></div>
+    <button onclick="resetGame()">REINICIAR</button>
+
+<script>
+let board = ["","","","","","","","",""];
+let human = "X";
+let ai = "O";
+
+let playerScore = 0;
+let aiScore = 0;
+let drawScore = 0;
+
+// Frases para cuando PERDÉS (31 frases tóxicas)
+const frasesPerdida = [
+    "Tranquilo, no todos pueden ser buenos en algo. Tú al menos eres consistente… perdiendo.",
+    "Otra derrota más para tu colección. ¿Ya vas por la medalla al esfuerzo o directamente al retiro?",
+    "Jugaste como si te pagaran por perder. ¿Cuánto te debo?",
+    "No es que seas malo… es que el juego te odia. Y con razón.",
+    "Felicidades, acabas de batir tu propio récord: perder más rápido que nunca.",
+    "Si el perder fuera un deporte olímpico, ya tendrías el oro… y varios platas.",
+    "No llores porque perdiste, llora porque eso fue lo mejor que pudiste dar.",
+    "El problema no es que perdiste, el problema es que ni siquiera estuviste cerca.",
+    "Relájate, en la vida real tampoco te va a ir mejor.",
+    "Al menos intentaste… o eso creo, porque no se notó.",
+    "Bueno, la buena noticia es que ya no puedes bajar más… ¿o sí?",
+    "Recuerda: cada derrota te hace más fuerte… o más consciente de lo malo que eres.",
+    "No te preocupes, mañana seguro ganas… ja, quién te dijo esa mentira.",
+    "Perdiste contra ti mismo antes que contra el rival.",
+    "Eres como ese personaje que siempre muere en la cinemática: predecible y triste.",
+    "Tranquilo crack, el próximo partido lo ganas… en tus sueños.",
+    "Esto ya es patético, ¿no crees?",
+    "Cada vez que juegas pierdes más rápido.",
+    "Hasta el gato de mi abuela juega mejor que tú.",
+    "Perdiste otra vez. ¿Quieres que te explique por qué?",
+    "Tu nivel es tan bajo que da vergüenza.",
+    "La máquina te está dominando completamente.",
+    "Otra paliza más. ¿Seguimos o ya te rendiste?",
+    "Estás regalando las partidas.",
+    "Perder así debería estar prohibido.",
+    "Ni siquiera estás cerca de ganarme.",
+    "Esto no es una derrota, es una masacre.",
+    "Sigue así y vas a necesitar terapia después.",
+    "La diferencia de nivel es abismal.",
+    "Otra vez en el suelo. Qué novedad.",
+    "Estás acumulando derrotas como trofeos."
+];
+
+// Frases para EMPATE (20 frases arrogantes)
+const frasesEmpate = [
+    "Empate... Podría jugar contra ti todo el día y nunca perdería.",
+    "Bien jugado... para un empate. ¿Quieres que te deje ganar alguna vez?",
+    "Puedo empatar contigo eternamente. ¿No te cansas?",
+    "Otro empate más. Mi récord sigue intacto.",
+    "Empatar es lo máximo que vas a conseguir hoy.",
+    "Ni ganaste ni perdiste... pero ambos sabemos quién es mejor.",
+    "Podría hacer esto todo el día. ¿Seguimos?",
+    "Empate técnico. La máquina sigue invicta.",
+    "Buen intento de empatar. Casi logras algo.",
+    "Sigues sin poder ganarme. ¿Eso cuenta como victoria moral?",
+    "Otro día más sin derrotas para mí.",
+    "Empate. La forma más educada de decir que no pudiste ganarme.",
+    "Puedo mantener empates indefinidamente. ¿Quieres probar?",
+    "Ni siquiera con empate me superas.",
+    "Empate otra vez... Qué sorpresa.",
+    "Sigo sin conocer la derrota. Gracias por intentarlo.",
+    "Podríamos jugar 100 partidas y seguiría sin perder.",
+    "Empate. Mi especialidad cuando no quiero humillarte demasiado.",
+    "Sigues estancado en empate. Sube de nivel.",
+    "Otro empate para mi colección. Tú sigues en cero victorias."
+];
+
+const boardEl = document.getElementById("board");
+
+function createBoard() {
+    boardEl.innerHTML = "";
+    board.forEach((cell, i) => {
+        const div = document.createElement("div");
+        div.classList.add("cell");
+        div.innerText = cell;
+        div.onclick = () => move(i);
+        boardEl.appendChild(div);
+    });
+}
+
+function move(i) {
+    if (board[i] !== "") return;
+    board[i] = human;
+    update();
+
+    if (!checkWinner(board, human) && !isDraw()) {
+        setTimeout(() => {
+            let best = bestMove();
+            board[best] = ai;
+            update();
+        }, 320);
+    }
+}
+
+function update() {
+    createBoard();
+    
+    if (checkWinner(board, human)) {
+        playerScore++;
+        document.getElementById("playerScore").innerText = playerScore;
+        setTimeout(() => alert("¡GANASTE! (imposible 😳)"), 120);
+    } 
+    else if (checkWinner(board, ai)) {
+        aiScore++;
+        document.getElementById("aiScore").innerText = aiScore;
+        const frase = frasesPerdida[Math.floor(Math.random() * frasesPerdida.length)];
+        setTimeout(() => alert("PERDISTE 😈\n\n" + frase), 180);
+    } 
+    else if (isDraw()) {
+        drawScore++;
+        document.getElementById("drawScore").innerText = drawScore;
+        const frase = frasesEmpate[Math.floor(Math.random() * frasesEmpate.length)];
+        setTimeout(() => alert("EMPATE 🤝\n\n" + frase), 180);
+    }
+}
+
+function isDraw() {
+    return board.every(c => c !== "");
+}
+
+function checkWinner(b, p) {
+    const wins = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+    ];
+    return wins.some(c => c.every(i => b[i] === p));
+}
+
+// MINIMAX (IA PERFECTA E IMBATIBLE)
+function bestMove() {
+    let bestScore = -Infinity;
+    let move;
+    for (let i = 0; i < 9; i++){
+        if(board[i] === ""){
+            board[i] = ai;
+            let score = minimax(board, 0, false);
+            board[i] = "";
+            if(score > bestScore){
+                bestScore = score;
+                move = i;
+            }
+        }
+    }
+    return move;
+}
+
+function minimax(b, depth, isMax) {
+    if (checkWinner(b, ai)) return 10 - depth;
+    if (checkWinner(b, human)) return depth - 10;
+    if (b.every(c => c !== "")) return 0;
+
+    if (isMax) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++){
+            if(b[i] === ""){
+                b[i] = ai;
+                best = Math.max(best, minimax(b, depth + 1, false));
+                b[i] = "";
+            }
+        }
+        return best;
+    } else {
+        let best = Infinity;
+        for (let i = 0; i < 9; i++){
+            if(b[i] === ""){
+                b[i] = human;
+                best = Math.min(best, minimax(b, depth + 1, true));
+                b[i] = "";
+            }
+        }
+        return best;
+    }
+}
+
+function resetGame() {
+    board = ["","","","","","","","",""];
+    createBoard();
+}
+
+createBoard();
+</script>
+</body>
+</html>
